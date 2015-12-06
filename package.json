@@ -1,0 +1,24 @@
+{
+  "name": "node-icloud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bmacheski/node-icloud.git"
+  },
+  "author": "Brian Macheski <bwm0007@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bmacheski/node-icloud/issues"
+  },
+  "homepage": "https://github.com/bmacheski/node-icloud#readme",
+  "dependencies": {
+    "superagent": "^1.5.0",
+    "superagent-defaults": "^0.1.14",
+    "tough-cookie": "^2.2.1"
+  }
+}
