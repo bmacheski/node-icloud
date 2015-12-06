@@ -97,7 +97,7 @@ Device.prototype.initClient = function() {
       for(var i = 0; i < device.length; i++) {
         self.devices.push({
           name: device[i]['name'],
-          device: device[i]['id']
+          deviceId: device[i]['id']
         })
       }
     }
