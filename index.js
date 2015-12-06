@@ -36,7 +36,7 @@ function Device(apple_id, password, device) {
   this.apple_id = apple_id;
   this.password = password;
   this.device_name = device;
-  this.devices = {};
+  this.devices = [];
   this.authenticate();
 }
 
@@ -86,10 +86,21 @@ Device.prototype.initClient = function() {
       }
       else {
         // Currently grabs first device returned in response.
+        addDevices(res.body.content)
+        self.showDevices()
         self.dsid = res.body.content[0].id;
         self.playSound();
       }
     })
+
+    function addDevices(device) {
+      for(var i = 0; i < device.length; i++) {
+        self.devices.push({
+          name: device[i]['name'],
+          device: device[i]['id']
+        })
+      }
+    }
 }
 
 /**
@@ -124,9 +135,7 @@ Device.prototype.playSound = function(subject) {
  */
 
 Device.prototype.showDevices = function() {
-  for (var prop in this.devices) {
-    console.log(prop + ': ' + this.devices[prop])
-  }
+  console.log(this.devices);
 }
 
 /**
