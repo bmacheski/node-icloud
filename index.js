@@ -54,7 +54,7 @@ Device.prototype.authenticate = function() {
     })
     .end(function(err, res) {
         if (err) {
-          console.log('Authentication failure. ' + err)
+          console.log('Authentication failure. ' + err);
       } else {
           handleCookies(res);
           self.findMeUrl = res.body.webservices.findme.url;
@@ -73,13 +73,13 @@ Device.prototype.initClient = function() {
   var fullpath = this.findMeUrl + config.client_init_path;
 
   if (cookieJar) {
-      self.cookies = cookieJar.getCookieStringSync(config.base_url);
+    self.cookies = cookieJar.getCookieStringSync(config.base_url);
   }
 
   superagent
     .post(fullpath)
     .set('cookie', self.cookies)
-    .end(function(err, res {
+    .end(function(err, res) {
       if (err) {
         console.log(err)
       }
@@ -102,7 +102,6 @@ Device.prototype.initClient = function() {
         }
       }
     })
-
     // Creates array of available devices from response.
     function addDevices(deviceArr) {
       deviceArr.forEach(function(el, i) {
