@@ -85,21 +85,20 @@ Device.prototype.initClient = function() {
         console.log(err)
       }
       else {
-        // Currently grabs first device returned in response.
         addDevices(res.body.content)
-        self.showDevices()
+        // Sets current device to first device in response.
         self.dsid = res.body.content[0].id;
-        self.playSound();
       }
     })
 
-    function addDevices(device) {
-      for(var i = 0; i < device.length; i++) {
+    // Creates array of available devices from response
+    function addDevices(deviceArr) {
+      deviceArr.forEach(function(el, i) {
         self.devices.push({
-          name: device[i]['name'],
-          deviceId: device[i]['id']
+          name: deviceArr[i]['name'],
+          deviceId: deviceArr[i]['id']
         })
-      }
+      })
     }
 }
 
