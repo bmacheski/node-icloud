@@ -25,17 +25,16 @@ module.exports = Device;
 
 /**
  * Initialize a new `Device`.
- * @param {[String]} username [iCloud username]
- * @param {[String]} password [iCloud password]
- * @param {[String]} device [iCloud device name]
+ * @param {[String]} username
+ * @param {[String]} password
+ * @param {[String]} device_name
  */
 
-function Device(apple_id, password, device) {
-
-  if (!(this instanceof Device)) return new Device(apple_id, password);
+function Device(apple_id, password, display_name) {
+  if (!(this instanceof Device)) return new Device(apple_id, password, display_name);
   this.apple_id = apple_id;
   this.password = password;
-  this.device_name = device;
+  this.display_name = display_name;
   this.devices = [];
   this.authenticate();
 }
@@ -53,9 +52,9 @@ Device.prototype.authenticate = function() {
       'apple_id': this.apple_id,
       'password': this.password
     })
-    .end(function(err, res, body) {
+    .end(function(err, res) {
         if (err) {
-          console.log("Authentication failure. " + err)
+          console.log('Authentication failure. ' + err)
       } else {
           handleCookies(res);
           self.findMeUrl = res.body.webservices.findme.url;
@@ -80,18 +79,31 @@ Device.prototype.initClient = function() {
   superagent
     .post(fullpath)
     .set('cookie', self.cookies)
-    .end(function(err, res, body) {
+    .end(function(err, res {
       if (err) {
         console.log(err)
       }
       else {
-        addDevices(res.body.content)
-        // Sets current device to first device in response.
-        self.dsid = res.body.content[0].id;
+        var content = res.body.content;
+        addDevices(content);
+
+        // If `device display name` was not given device ID is set to
+        // first device in reponse.
+        if (!self.display_name) {
+          self.dsid = content[0].id;
+
+        } else {
+          var re = new RegExp(self.display_name, 'i');
+          content.forEach(function(el, i) {
+            if (content[i].name.match(re)) {
+              self.dsid = content[i].id;
+            }
+          })
+        }
       }
     })
 
-    // Creates array of available devices from response
+    // Creates array of available devices from response.
     function addDevices(deviceArr) {
       deviceArr.forEach(function(el, i) {
         self.devices.push({
@@ -104,12 +116,11 @@ Device.prototype.initClient = function() {
 
 /**
  * Sends request to device to play sound.
- * @param {[String]} subject [sound message subject]
+ * @param {[String]} subject
  */
 
 Device.prototype.playSound = function(subject) {
   var self = this;
-
   var full_sound_path = this.findMeUrl + config.fmip_sound_path;
   var subject = subject || 'Find my iPhone';
 
@@ -124,7 +135,7 @@ Device.prototype.playSound = function(subject) {
       if (err) {
         console.log(err)
       } else {
-        console.log('Playing iPhone Alert..')
+        console.log('Playing iPhone alert..')
       }
     })
 }
@@ -134,17 +145,16 @@ Device.prototype.playSound = function(subject) {
  */
 
 Device.prototype.showDevices = function() {
-  console.log(this.devices);
+  return this.devices;
 }
 
 /**
  * Handles cookies required for iCloud services to function
  * after authentication.
- * @param {[Object]} response [response res]
+ * @param {[Object]} res
  */
 
 var handleCookies = function(res) {
-
   function addCookie(cookie) {
     try {
       cookieJar.setCookieSync(cookie, config.base_url)
