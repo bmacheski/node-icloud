@@ -1,34 +1,15 @@
 'use strict';
 
-/**
- * Module dependencies.
- */
-
 var superagent    = require('superagent-defaults')()
   , config        = require('./lib/config')
   , cookies       = require('./lib/cookie')
   , cookieJar     = cookies.jar();
 
-/**
- * Set request defaults required for iCloud.
- */
-
 superagent.set({
   'Origin': config.base_url
 });
 
-/**
- * Expose `Device`.
- */
-
 module.exports = Device;
-
-/**
- * Initialize a new `Device`.
- * @param {[String]} username
- * @param {[String]} password
- * @param {[String]} device_name
- */
 
 function Device(apple_id, password, display_name) {
   if (!(this instanceof Device)) return new Device(apple_id, password, display_name);
@@ -38,10 +19,6 @@ function Device(apple_id, password, display_name) {
   this.devices = [];
   this.authenticate();
 }
-
-/**
- * Authenticate to iCloud.
- */
 
 Device.prototype.authenticate = function() {
   var self = this;
@@ -63,21 +40,12 @@ Device.prototype.authenticate = function() {
     })
 }
 
-/**
- * Handles getting the device id needed to construct `playSound` url.
- * TODO: Handle refreshing of client as device location changes.
- */
-
 Device.prototype.initClient = function() {
   var self = this;
-  var fullpath = this.findMeUrl + config.client_init_path;
-
-  if (cookieJar) {
-    self.cookies = cookieJar.getCookieStringSync(config.base_url);
-  }
+  this.cookies = cookieJar.getCookieStringSync(config.base_url);
 
   superagent
-    .post(fullpath)
+    .post(self.findMeUrl + config.client_init_path)
     .set('cookie', self.cookies)
     .end(function(err, res) {
       if (err) {
@@ -87,14 +55,14 @@ Device.prototype.initClient = function() {
         var content = res.body.content;
         addDevices(content);
 
-        // If `device display name` was not given device ID is set to
-        // first device in reponse.
+        // If a `device display name` was not given device ID
+        // is set to first device in reponse.
         if (!self.display_name) {
           self.dsid = content[0].id;
 
         } else {
           var re = new RegExp(self.display_name, 'i');
-          content.forEach(function(el, i) {
+          content.forEach(function(e, i) {
             if (content[i].name.match(re)) {
               self.dsid = content[i].id;
             }
@@ -102,9 +70,10 @@ Device.prototype.initClient = function() {
         }
       }
     })
+
     // Creates array of available devices from response.
     function addDevices(deviceArr) {
-      deviceArr.forEach(function(el, i) {
+      deviceArr.forEach(function(e, i) {
         self.devices.push({
           name: deviceArr[i]['name'],
           deviceId: deviceArr[i]['id']
@@ -113,18 +82,12 @@ Device.prototype.initClient = function() {
     }
 }
 
-/**
- * Sends request to device to play sound.
- * @param {[String]} subject
- */
-
 Device.prototype.playSound = function(subject) {
   var self = this;
-  var full_sound_path = this.findMeUrl + config.fmip_sound_path;
   var subject = subject || 'Find my iPhone';
 
   superagent
-    .post(full_sound_path)
+    .post(self.findMeUrl + config.fmip_sound_path)
     .set('cookie', self.cookies)
     .send({
       'subject': subject,
@@ -139,19 +102,9 @@ Device.prototype.playSound = function(subject) {
     })
 }
 
-/**
- * Lists all current users devices.
- */
-
 Device.prototype.showDevices = function() {
   return this.devices;
 }
-
-/**
- * Handles cookies required for iCloud services to function
- * after authentication.
- * @param {[Object]} res
- */
 
 var handleCookies = function(res) {
   function addCookie(cookie) {
@@ -164,7 +117,5 @@ var handleCookies = function(res) {
 
   if (Array.isArray(res.headers['set-cookie'])) {
     res.headers['set-cookie'].forEach(addCookie)
-  } else {
-    addCookie(res.headers['set-cookie'])
   }
 }
