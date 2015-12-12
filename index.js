@@ -35,8 +35,7 @@ var superagentPost = function(path, data, cb) {
 
 function Device(apple_id, password, display_name) {
   if (!(this instanceof Device)) return new Device(apple_id, password, display_name);
-  this.apple_id = apple_id;
-  this.password = password;
+  this.userData = { 'apple_id': apple_id, 'password': password };
   this.display_name = display_name;
   this.devices = [];
   this.authenticate();
@@ -45,10 +44,8 @@ function Device(apple_id, password, display_name) {
 Device.prototype.authenticate = function() {
   var self = this;
 
-  superagentPost(config.login_path, {
-    'apple_id': this.apple_id,
-    'password': this.password
-  }, function(err, res) {
+  superagentPost(config.login_path, self.userData,
+    function(err, res) {
       if (err) {
           console.log('Authentication failure. ' + err);
       } else {
@@ -64,12 +61,11 @@ Device.prototype.initClient = function() {
 
   updateDefaults();
 
-  superagentPost(self.findMeUrl + config.client_init_path, {
-    'apple_id': this.apple_id,
-    'password': this.password
-  }, function(err, res) {
+  superagent
+    .post(self.findMeUrl + config.client_init_path)
+    .end(function(err, res) {
       if (err) {
-          console.log('Authentication failure. ' + err);
+        console.log('Authentication failure. ' + err);
       } else {
         var content = res.body.content;
         addDevices(content);
@@ -105,10 +101,8 @@ Device.prototype.playSound = function(subject) {
   var self = this;
   var subject = subject || 'Find my iPhone';
 
-  superagentPost(self.findMeUrl + config.fmip_sound_path, {
-    'apple_id': this.apple_id,
-    'password': this.password
-  }, function(err, res) {
+  superagentPost(self.findMeUrl + config.fmip_sound_path, self.userData,
+    function(err, res) {
       if (err) {
         console.log(err)
       } else {
