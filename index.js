@@ -4,18 +4,16 @@
  * Module dependencies.
  */
 
-var superagent    = require('superagent-defaults')()
-  , config        = require('./lib/config')
-  , cookies       = require('./lib/cookie')
-  , cookieJar     = cookies.jar();
+var superagent = require('superagent-defaults')()
+  , config = require('./lib/config')
+  , cookies = require('./lib/cookie')
+  , cookieJar = cookies.jar();
 
 /**
  * Set request defaults required for iCloud.
  */
 
-superagent.set({
-  'Origin': config.base_url
-});
+superagent.set({ 'Origin': config.base_url });
 
 /**
  * Expose `Device`.
@@ -48,10 +46,7 @@ Device.prototype.authenticate = function() {
 
   superagent
     .post(config.login_path)
-    .send({
-      'apple_id': this.apple_id,
-      'password': this.password
-    })
+    .send({ 'apple_id': this.apple_id, 'password': this.password })
     .end(function(err, res) {
         if (err) {
           console.log('Authentication failure. ' + err)
@@ -61,7 +56,7 @@ Device.prototype.authenticate = function() {
           self.initClient();
         }
     })
-}
+};
 
 /**
  * Handles getting the device id needed to construct `playSound` url.
@@ -73,7 +68,7 @@ Device.prototype.initClient = function() {
   var fullpath = this.findMeUrl + config.client_init_path;
 
   if (cookieJar) {
-      self.cookies = cookieJar.getCookieStringSync(config.base_url);
+    self.cookies = cookieJar.getCookieStringSync(config.base_url);
   }
 
   superagent
@@ -94,6 +89,7 @@ Device.prototype.initClient = function() {
 
         } else {
           var re = new RegExp(self.display_name, 'i');
+
           content.forEach(function(el, i) {
             if (content[i].name.match(re)) {
               self.dsid = content[i].id;
@@ -110,9 +106,9 @@ Device.prototype.initClient = function() {
           name: deviceArr[i]['name'],
           deviceId: deviceArr[i]['id']
         })
-      })
+      });
     }
-}
+};
 
 /**
  * Sends request to device to play sound.
@@ -127,18 +123,15 @@ Device.prototype.playSound = function(subject) {
   superagent
     .post(full_sound_path)
     .set('cookie', self.cookies)
-    .send({
-      'subject': subject,
-      'device': this.dsid
-    })
+    .send({ 'subject': subject, 'device': this.dsid })
     .end(function(err, res) {
       if (err) {
-        console.log(err)
+        throw(err)
       } else {
         console.log('Playing iPhone alert..')
       }
     })
-}
+};
 
 /**
  * Lists all current users devices.
@@ -146,7 +139,7 @@ Device.prototype.playSound = function(subject) {
 
 Device.prototype.showDevices = function() {
   return this.devices;
-}
+};
 
 /**
  * Handles cookies required for iCloud services to function
@@ -157,15 +150,15 @@ Device.prototype.showDevices = function() {
 var handleCookies = function(res) {
   function addCookie(cookie) {
     try {
-      cookieJar.setCookieSync(cookie, config.base_url)
+      cookieJar.setCookieSync(cookie, config.base_url);
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
   }
 
   if (Array.isArray(res.headers['set-cookie'])) {
-    res.headers['set-cookie'].forEach(addCookie)
+    res.headers['set-cookie'].forEach(addCookie);
   } else {
-    addCookie(res.headers['set-cookie'])
+    addCookie(res.headers['set-cookie']);
   }
-}
+};
