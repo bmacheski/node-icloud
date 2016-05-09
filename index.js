@@ -1,82 +1,98 @@
+'use strict';
+
+/**
+ * Module dependencies.
+ */
+
 var superagent = require('superagent-defaults')()
-var config = require('./lib/config')
-var cookies = require('./lib/cookie')
-var cookieJar = cookies.jar()
+  , config = require('./lib/config')
+  , cookies = require('./lib/cookie')
+  , cookieJar = cookies.jar();
 
-superagent.set('Origin', config.base_url)
+/**
+ * Set request defaults required for iCloud.
+ */
 
-var handleCookies = function (res) {
-  function addCookie (cookie) {
-    try {
-      cookieJar.setCookieSync(cookie, config.base_url)
-    } catch (err) {
-      throw err
-    }
-  }
+superagent.set({ 'Origin': config.base_url });
 
-  if (Array.isArray(res.headers['set-cookie'])) {
-    res.headers['set-cookie'].forEach(addCookie)
-  }
+/**
+ * Expose `Device`.
+ */
+
+module.exports = Device;
+
+/**
+ * Initialize a new `Device`.
+ * @param {[String]} username
+ * @param {[String]} password
+ * @param {[String]} device_name
+ */
+
+function Device(apple_id, password, display_name) {
+  if (!(this instanceof Device)) return new Device(apple_id, password, display_name);
+  this.apple_id = apple_id;
+  this.password = password;
+  this.display_name = display_name;
+  this.devices = [];
+  this.authenticate();
 }
 
-var updateDefaults = function () {
-  var cookies = cookieJar.getCookieStringSync(config.base_url)
-  superagent.set('cookie', cookies)
-}
+/**
+ * Authenticate to iCloud.
+ */
 
-var superagentPost = function (path, data, cb) {
+Device.prototype.authenticate = function() {
+  var self = this;
+
   superagent
-    .post(path)
-    .send(data)
-    .end(cb)
-}
-
-function Device (apple_id, password, display_name) {
-  if (!(this instanceof Device)) return new Device(apple_id, password, display_name)
-  this.userData = { 'apple_id': apple_id, 'password': password }
-  this.display_name = display_name
-  this.devices = []
-  this.authenticate()
-}
-
-Device.prototype.authenticate = function () {
-  var self = this
-
-  superagentPost(config.login_path, self.userData,
-    function (err, res) {
-      if (err) {
-        console.log('Authentication failure. ' + err)
+    .post(config.login_path)
+    .send({ 'apple_id': this.apple_id, 'password': this.password })
+    .end(function(err, res) {
+        if (err) {
+          console.log('Authentication failure. ' + err)
       } else {
-        handleCookies(res)
-        self.findMeUrl = res.body.webservices.findme.url
-        self.initClient()
-      }
+          handleCookies(res);
+          self.findMeUrl = res.body.webservices.findme.url;
+          self.initClient();
+        }
     })
-}
+};
 
-Device.prototype.initClient = function () {
-  var self = this
+/**
+ * Handles getting the device id needed to construct `playSound` url.
+ * TODO: Handle refreshing of client as device location changes.
+ */
 
-  updateDefaults()
+Device.prototype.initClient = function() {
+  var self = this;
+  var fullpath = this.findMeUrl + config.client_init_path;
+
+  if (cookieJar) {
+    self.cookies = cookieJar.getCookieStringSync(config.base_url);
+  }
 
   superagent
-    .post(self.findMeUrl + config.client_init_path)
-    .end(function (err, res) {
+    .post(fullpath)
+    .set('cookie', self.cookies)
+    .end(function(err, res {
       if (err) {
-        console.log('Authentication failure. ' + err)
-      } else {
-        var content = res.body.content
-        addDevices(content)
+        console.log(err)
+      }
+      else {
+        var content = res.body.content;
+        addDevices(content);
 
-        // If a `device display name` was not given device ID
-        // is set to first device in reponse.
+        // If `device display name` was not given device ID is set to
+        // first device in reponse.
         if (!self.display_name) {
-          self.dsid = content[0].id
+          self.dsid = content[0].id;
+
         } else {
-          var re = new RegExp(self.display_name, 'i')
-          content.forEach(function (e, i) {
+          var re = new RegExp(self.display_name, 'i');
+
+          content.forEach(function(el, i) {
             if (content[i].name.match(re)) {
-              self.dsid = content[i].id
+              self.dsid = content[i].id;
             }
           })
         }
@@ -84,32 +100,65 @@ Device.prototype.initClient = function () {
     })
 
     // Creates array of available devices from response.
-  function addDevices (deviceArr) {
-    deviceArr.forEach(function (e, i) {
-      self.devices.push({
-        name: deviceArr[i]['name'],
-        deviceId: deviceArr[i]['id']
-      })
-    })
-  }
-}
+    function addDevices(deviceArr) {
+      deviceArr.forEach(function(el, i) {
+        self.devices.push({
+          name: deviceArr[i]['name'],
+          deviceId: deviceArr[i]['id']
+        })
+      });
+    }
+};
 
-Device.prototype.playSound = function (subject) {
-  var self = this
-  var subject = subject || 'Find my iPhone'
+/**
+ * Sends request to device to play sound.
+ * @param {[String]} subject
+ */
 
-  superagentPost(self.findMeUrl + config.fmip_sound_path, self.userData,
-    function (err, res) {
+Device.prototype.playSound = function(subject) {
+  var self = this;
+  var full_sound_path = this.findMeUrl + config.fmip_sound_path;
+  var subject = subject || 'Find my iPhone';
+
+  superagent
+    .post(full_sound_path)
+    .set('cookie', self.cookies)
+    .send({ 'subject': subject, 'device': this.dsid })
+    .end(function(err, res) {
       if (err) {
-        throw err
+        throw(err)
       } else {
         console.log('Playing iPhone alert..')
       }
     })
-}
+};
 
-Device.prototype.showDevices = function () {
-  return this.devices
-}
+/**
+ * Lists all current users devices.
+ */
 
-module.exports = Device
+Device.prototype.showDevices = function() {
+  return this.devices;
+};
+
+/**
+ * Handles cookies required for iCloud services to function
+ * after authentication.
+ * @param {[Object]} res
+ */
+
+var handleCookies = function(res) {
+  function addCookie(cookie) {
+    try {
+      cookieJar.setCookieSync(cookie, config.base_url);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  if (Array.isArray(res.headers['set-cookie'])) {
+    res.headers['set-cookie'].forEach(addCookie);
+  } else {
+    addCookie(res.headers['set-cookie']);
+  }
+};
