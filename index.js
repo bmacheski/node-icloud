@@ -134,21 +134,32 @@ Device.prototype.playSound = function(subject) {
         }
       })
   }
-
-  if (!this.authenticated) {
-    this.authenticate(soundAPI);
-  } else {
-    soundAPI();
-  }
+  self.handler(soundAPI);
 };
 
 /**
  * Lists all current users devices.
  */
 
-Device.prototype.showDevices = function() {
-  return this.devices;
+Device.prototype.showDevices = function(cb) {
+  var self = this;
+  function device() {
+    cb(self.devices)
+  }
+  this.handler(device);
 };
+
+/**
+ * Makes call based on authentication state.
+ */
+
+Device.prototype.handler = function(fn) {
+  if (!this.authenticated) {
+    this.authenticate(fn);
+  } else {
+    fn();
+  }
+}
 
 /**
  * Handles cookies required for iCloud services to function
