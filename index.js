@@ -34,27 +34,29 @@ function Device(apple_id, password, display_name) {
   this.password = password;
   this.display_name = display_name;
   this.devices = [];
-  this.authenticate();
+  this.authenticated = false;
 }
 
 /**
  * Authenticate to iCloud.
  */
 
-Device.prototype.authenticate = function() {
+Device.prototype.authenticate = function(cb) {
   var self = this;
 
   superagent
     .post(config.login_path)
     .send({ 'apple_id': this.apple_id, 'password': this.password })
     .end(function(err, res) {
-        if (err) {
-          console.log('Authentication failure. ' + err)
+      if (err) {
+        throw err('Authentication failure', err);
       } else {
-          handleCookies(res);
-          self.findMeUrl = res.body.webservices.findme.url;
-          self.initClient();
-        }
+        handleCookies(res);
+        self.findMeUrl = res.body.webservices.findme.url;
+        self.full_sound_path = res.body.webservices.findme.url + config.fmip_sound_path;
+        self.authenticated = true;
+        self.initClient(cb);
+      }
     })
 };
 
@@ -63,7 +65,7 @@ Device.prototype.authenticate = function() {
  * TODO: Handle refreshing of client as device location changes.
  */
 
-Device.prototype.initClient = function() {
+Device.prototype.initClient = function(cb) {
   var self = this;
   var fullpath = this.findMeUrl + config.client_init_path;
 
@@ -74,28 +76,28 @@ Device.prototype.initClient = function() {
   superagent
     .post(fullpath)
     .set('cookie', self.cookies)
-    .end(function(err, res {
+    .end(function(err, res) {
       if (err) {
-        console.log(err)
+        throw(err);
       }
       else {
         var content = res.body.content;
+
         addDevices(content);
 
         // If `device display name` was not given device ID is set to
         // first device in reponse.
         if (!self.display_name) {
           self.dsid = content[0].id;
-
         } else {
           var re = new RegExp(self.display_name, 'i');
-
           content.forEach(function(el, i) {
             if (content[i].name.match(re)) {
               self.dsid = content[i].id;
             }
           })
         }
+        if (cb) cb();
       }
     })
 
@@ -117,20 +119,27 @@ Device.prototype.initClient = function() {
 
 Device.prototype.playSound = function(subject) {
   var self = this;
-  var full_sound_path = this.findMeUrl + config.fmip_sound_path;
   var subject = subject || 'Find my iPhone';
 
-  superagent
-    .post(full_sound_path)
-    .set('cookie', self.cookies)
-    .send({ 'subject': subject, 'device': this.dsid })
-    .end(function(err, res) {
-      if (err) {
-        throw(err)
-      } else {
-        console.log('Playing iPhone alert..')
-      }
-    })
+  function soundAPI() {
+    superagent
+      .post(self.full_sound_path)
+      .set('cookie', self.cookies)
+      .send({ 'subject': subject, 'device': self.dsid })
+      .end(function(err, res) {
+        if (err)  {
+          throw(err)
+        } else {
+          console.log('Playing iPhone alert..')
+        }
+      })
+  }
+
+  if (!this.authenticated) {
+    this.authenticate(soundAPI);
+  } else {
+    soundAPI();
+  }
 };
 
 /**

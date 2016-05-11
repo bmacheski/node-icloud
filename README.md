@@ -2,6 +2,13 @@
 
 A node iCloud module.
 
-## Status
+## Usage
 
-Currently under development.
+``` js
+
+var iCloud = require('node-cloud');
+var device = new iCloud('foobar@icloud.com', 'password');
+
+device.playSound();
+
+```

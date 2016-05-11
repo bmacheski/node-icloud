@@ -1,7 +1,7 @@
 {
   "name": "node-icloud",
   "version": "1.0.0",
-  "description": "",
+  "description": "Node iCloud module",
   "main": "index.js",
   "scripts": {
     "test": "standard || true"
@@ -21,7 +21,5 @@
     "superagent-defaults": "^0.1.14",
     "tough-cookie": "^2.2.1"
   },
-  "devDependencies": {
-    "standard": "^6.0.7"
-  }
+  "devDependencies": {}
 }
