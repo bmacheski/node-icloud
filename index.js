@@ -52,12 +52,13 @@ Device.prototype.authenticate = function(cb) {
         throw err('Authentication failure', err);
       } else {
         handleCookies(res);
+
         self.findMeUrl = res.body.webservices.findme.url;
         self.full_sound_path = res.body.webservices.findme.url + config.fmip_sound_path;
         self.authenticated = true;
         self.initClient(cb);
       }
-    })
+    });
 };
 
 /**
@@ -69,20 +70,21 @@ Device.prototype.initClient = function(cb) {
   var self = this;
   var fullpath = this.findMeUrl + config.client_init_path;
 
-  if (cookieJar) {
-    self.cookies = cookieJar.getCookieStringSync(config.base_url);
-  }
+  if (cookieJar) self.cookies = cookieJar.getCookieStringSync(config.base_url);
 
   superagent
     .post(fullpath)
     .set('cookie', self.cookies)
     .end(function(err, res) {
-      if (err) {
-        throw(err);
-      }
-      else {
-        var content = res.body.content;
+      var content;
+      var re;
 
+      if (err) {
+        throw err;
+      } else {
+        content = res.body.content;
+
+        // Add devices from response.
         addDevices(content);
 
         // If `device display name` was not given device ID is set to
@@ -90,13 +92,15 @@ Device.prototype.initClient = function(cb) {
         if (!self.display_name) {
           self.dsid = content[0].id;
         } else {
-          var re = new RegExp(self.display_name, 'i');
+          re = new RegExp(self.display_name, 'i');
+
           content.forEach(function(el, i) {
             if (content[i].name.match(re)) {
               self.dsid = content[i].id;
             }
           })
         }
+
         if (cb) cb();
       }
     })
@@ -107,7 +111,7 @@ Device.prototype.initClient = function(cb) {
         self.devices.push({
           name: deviceArr[i]['name'],
           deviceId: deviceArr[i]['id']
-        })
+        });
       });
     }
 };
@@ -128,12 +132,13 @@ Device.prototype.playSound = function(subject) {
       .send({ 'subject': subject, 'device': self.dsid })
       .end(function(err, res) {
         if (err)  {
-          throw(err)
+          throw err;
         } else {
-          console.log('Playing iPhone alert..')
+          console.log('Playing iPhone alert..');
         }
-      })
+      });
   }
+
   self.handler(soundAPI);
 };
 
@@ -143,9 +148,11 @@ Device.prototype.playSound = function(subject) {
 
 Device.prototype.showDevices = function(cb) {
   var self = this;
+
   function device() {
-    cb(self.devices)
+    cb(self.devices);
   }
+
   this.handler(device);
 };
 
@@ -159,7 +166,7 @@ Device.prototype.handler = function(fn) {
   } else {
     fn();
   }
-}
+};
 
 /**
  * Handles cookies required for iCloud services to function
@@ -172,7 +179,7 @@ var handleCookies = function(res) {
     try {
       cookieJar.setCookieSync(cookie, config.base_url);
     } catch (err) {
-      console.log(err);
+      throw err;
     }
   }
 
