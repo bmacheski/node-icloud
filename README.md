@@ -17,7 +17,7 @@ Show all devices associated with the current iCloud account.
 ``` js
 
 var iCloud = require("node-cloud");
-var device = new iCloud("foobar@icloud.com", "password", "Brian's iPhone");
+var device = iCloud("foobar@icloud.com", "password", "Brian's iPhone");
 
 device.playSound();
 
