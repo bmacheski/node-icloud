@@ -4,7 +4,7 @@ A node iCloud module.
 
 ## API
 
-### playSound()
+### playSound([subject])
 
 Play sound on iPhone.
 
@@ -19,7 +19,7 @@ Show all devices associated with the current iCloud account.
 var iCloud = require("node-cloud");
 var device = iCloud("foobar@icloud.com", "password", "Brian's iPhone");
 
-device.playSound();
+device.playSound("Lost my iPhone");
 
 device.showDevices(function(devices) {
   console.log(devices);
