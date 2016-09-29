@@ -23,9 +23,9 @@ module.exports = Device;
 
 /**
  * Initialize a new `Device`.
- * @param {[String]} username
- * @param {[String]} password
- * @param {[String]} device_name
+ * @param {String} username
+ * @param {String} password
+ * @param {String} device_name
  */
 
 function Device(apple_id, password, display_name) {
@@ -62,8 +62,7 @@ Device.prototype.authenticate = function(cb) {
 };
 
 /**
- * Handles getting the device id needed to construct `playSound` url.
- * TODO: Handle refreshing of client as device location changes.
+ * Handle getting the device id needed to construct `playSound` url.
  */
 
 Device.prototype.initClient = function(cb) {
@@ -87,8 +86,7 @@ Device.prototype.initClient = function(cb) {
         // Add devices from response.
         addDevices(content);
 
-        // If `device display name` was not given device ID is set to
-        // first device in reponse.
+        // If `device display name` was not given device ID is set to first device in reponse.
         if (!self.display_name) {
           self.dsid = content[0].id;
         } else {
@@ -98,14 +96,14 @@ Device.prototype.initClient = function(cb) {
             if (content[i].name.match(re)) {
               self.dsid = content[i].id;
             }
-          })
+          });
         }
 
         if (cb) cb();
       }
-    })
+    });
 
-    // Creates array of available devices from response.
+    // Create array of available devices from response.
     function addDevices(deviceArr) {
       deviceArr.forEach(function(el, i) {
         self.devices.push({
@@ -117,8 +115,8 @@ Device.prototype.initClient = function(cb) {
 };
 
 /**
- * Sends request to device to play sound.
- * @param {[String]} subject
+ * Send request to device to play sound.
+ * @param {String} subject
  */
 
 Device.prototype.playSound = function(subject) {
@@ -143,7 +141,7 @@ Device.prototype.playSound = function(subject) {
 };
 
 /**
- * Lists all current users devices.
+ * List all current users devices.
  */
 
 Device.prototype.showDevices = function(cb) {
@@ -157,7 +155,7 @@ Device.prototype.showDevices = function(cb) {
 };
 
 /**
- * Makes call based on authentication state.
+ * Make call based on authentication state.
  */
 
 Device.prototype.handler = function(fn) {
@@ -169,9 +167,9 @@ Device.prototype.handler = function(fn) {
 };
 
 /**
- * Handles cookies required for iCloud services to function
+ * Handle cookies required for iCloud services to function
  * after authentication.
- * @param {[Object]} res
+ * @param {Object} res
  */
 
 var handleCookies = function(res) {
