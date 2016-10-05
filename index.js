@@ -9,6 +9,8 @@ var superagent = require('superagent-defaults')()
   , cookies = require('./lib/cookie')
   , cookieJar = cookies.jar();
 
+function noop() {}
+
 /**
  * Set request defaults required for iCloud.
  */
@@ -68,8 +70,11 @@ Device.prototype.authenticate = function(cb) {
 Device.prototype.initClient = function(cb) {
   var self = this;
   var fullpath = this.findMeUrl + config.client_init_path;
+  cb = cb || noop;
 
-  if (cookieJar) self.cookies = cookieJar.getCookieStringSync(config.base_url);
+  if (cookieJar) {
+    this.cookies = cookieJar.getCookieStringSync(config.base_url);
+  }
 
   superagent
     .post(fullpath)
@@ -99,7 +104,7 @@ Device.prototype.initClient = function(cb) {
           });
         }
 
-        if (cb) cb();
+        cb();
       }
     });
 
